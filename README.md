@@ -1,10 +1,19 @@
-# AI Teaching Assistant - Master Plan
+# AI Teaching Assistant
+
+## Project Overview
+
+This project aims to create an AI Teaching Assistant designed to significantly reduce the burden on teachers by automating the assignment evaluation process. The system enables teachers to effortlessly create assignments, while students can submit their handwritten assignments in the form of images. Utilizing the power of Google Cloud Vision API, the project employs Optical Character Recognition (OCR) for evaluating these assignments, providing an efficient auto-grading system. To ensure academic integrity, the project also includes duplicate detection capabilities. Furthermore, the system automatically generates Google Sheets reports, streamlining the administrative tasks for teachers.
+
+---
+
+
 
 ## 1️⃣ App Overview & Objectives
 
 The AI Teaching Assistant is designed to **reduce the burden on teachers** by automating assignment evaluation. Teachers create assignments with an optional answer key, and students submit handwritten assignments as images. The system uses **Google Cloud Vision API** for OCR-based evaluation and provides auto-grading with teacher override functionality. The app also ensures **duplicate submission detection** and generates **Google Sheets reports** for teachers.
 
 ---
+
 
 ## 2️⃣ Target Audience
 
