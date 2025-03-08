@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "name": "Flutter (lib/screens/dashboards/teacher/dashboard_screen.dart)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/screens/dashboards/teacher/dashboard_screen.dart"
+        }
+    ]
+}

@@ -29,6 +29,13 @@
             {
               "client_id": "547885866567-uaeh69eqavv0btt6a7v6iraugj1fi8v7.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "547885866567-qhuooidippklf4vlqgop49sr0cadhcs4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.aiTeachingAssistant"
+              }
             }
           ]
         }
