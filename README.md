@@ -1,4 +1,4 @@
-# TARA:Teaching Assistant for Review and Assesment
+# TARA:Teaching Assistant for Review and Assessment
 
 ## Project Overview
 
