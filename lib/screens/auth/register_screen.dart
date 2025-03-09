@@ -13,6 +13,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController fullNameController = TextEditingController();
   String selectedRole = 'student';
 
   final AuthService _authService = AuthService();
@@ -20,10 +21,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _register() async {
     if (_formKey.currentState!.validate()) {
       try {
-        String? error = await _authService.registerUser(
+        // Register the user using AuthService
+        String? error = await _authService.signUpUser(
           emailController.text.trim(),
           passwordController.text.trim(),
-          selectedRole,
+          fullNameController.text.trim(),
+          selectedRole,  // Pass the selected role to the AuthService
+          context,
         );
 
         if (error == null) {
@@ -31,12 +35,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SnackBar(content: Text("Registration successful! Please log in.")),
           );
 
-          // Navigate to Login Screen
+          // Navigate to Login Screen after successful registration
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const LoginScreen()),
           );
         } else {
+          // Show error message
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
         }
       } catch (e) {
@@ -58,6 +63,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Full Name Field
+              TextFormField(
+                controller: fullNameController,
+                decoration: InputDecoration(
+                  labelText: "Full Name",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  prefixIcon: const Icon(Icons.person),
+                ),
+                validator: (value) => value!.isEmpty ? "Please enter your full name" : null,
+              ),
+              const SizedBox(height: 16),
+
               // Email Field
               TextFormField(
                 controller: emailController,

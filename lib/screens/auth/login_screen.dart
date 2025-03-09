@@ -1,38 +1,96 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';
-import 'auth_service.dart';
+// ignore: unused_import
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:ai_teaching_assistant/screens/dashboards/student/student_dashboard_screen.dart';
+import 'package:ai_teaching_assistant/screens/dashboards/teacher/dashboard_screen.dart';
+import 'package:ai_teaching_assistant/screens/auth/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
-  LoginScreenState createState() => LoginScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  final AuthService _authService = AuthService(); // ✅ Create one instance
-  bool _isLoading = false; // ✅ Loading state
+  final AuthService _authService = AuthService();
 
-  // ✅ LOGIN FUNCTION
-  void _login() async {
-    if (!_formKey.currentState!.validate()) return; // Validate form
+  bool _isLoading = false;
 
-    setState(() => _isLoading = true); // Show loader
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    String? error = await _authService.loginUser(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-      context, // ✅ Pass context for navigation
-    );
+    setState(() => _isLoading = true);
 
-    setState(() => _isLoading = false); // Hide loader
+   String? errorMessage = await _authService.loginUser(
+  _emailController.text.trim(),
+  _passwordController.text.trim(),
+  context,
+);
 
-    if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+
+    if (errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } else {
+      String? userRole = await _authService.getUserRole(email: _emailController.text.trim());
+      if (userRole != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => userRole == 'teacher'
+                ? const TeacherDashboardScreen()
+                : const StudentDashboardScreen(),
+          ),
+        );
+      }
     }
+
+    setState(() => _isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Login")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) =>
+                    value!.isEmpty ? "Enter a valid email" : null,
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                validator: (value) =>
+                    value!.length < 6 ? "Password must be at least 6 characters" : null,
+              ),
+              const SizedBox(height: 20),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _login,
+                      child: const Text("Login"),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -40,117 +98,5 @@ class LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(), // Dismiss keyboard on tap
-      child: Scaffold(
-        backgroundColor: Colors.grey[200], // Light grey background
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // App Title
-                  const Text(
-                    "TARA",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Email TextField
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      prefixIcon: const Icon(Icons.email),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Password TextField
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      prefixIcon: const Icon(Icons.lock),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        backgroundColor: Colors.deepPurple,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white) // ✅ Show loader
-                          : const Text(
-                              "Login",
-                              style: TextStyle(fontSize: 18, color: Colors.white),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Sign Up Navigation
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignUpScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      "Don't have an account? Sign up",
-                      style: TextStyle(fontSize: 16, color: Colors.deepPurple),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ), 
-        ),
-      ),
-    );
   }
 }

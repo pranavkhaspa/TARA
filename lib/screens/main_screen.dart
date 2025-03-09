@@ -4,7 +4,7 @@ import 'package:ai_teaching_assistant/screens/dashboards/teacher/dashboard_scree
 import 'package:ai_teaching_assistant/screens/auth/auth_service.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -14,7 +14,7 @@ class _MainScreenState extends State<MainScreen> {
   String? userRole;
   final AuthService _authService = AuthService();
 
-  @override 
+  @override
   void initState() {
     super.initState();
     _fetchUserRole();
@@ -35,8 +35,9 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
 
+    // Removed the 'const' keyword from the below screens
     return userRole == 'teacher'
-        ? const TeacherDashboardScreen()
-        : const StudentDashboardScreen();
+        ? TeacherDashboardScreen() // Removed 'const' here
+        : StudentDashboardScreen(); // Removed 'const' here
   }
 }

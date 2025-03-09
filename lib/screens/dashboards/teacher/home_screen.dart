@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TeacherHomeScreen extends StatelessWidget {
-  const TeacherHomeScreen({Key? key}) : super(key: key);
+  const TeacherHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
