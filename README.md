@@ -1,4 +1,4 @@
-# AI Teaching Assistant
+# TARA:Teaching Assistant for Review and Assessment
 
 ## Project Overview
 

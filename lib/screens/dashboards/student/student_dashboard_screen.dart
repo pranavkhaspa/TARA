@@ -1,159 +1,181 @@
-  import 'package:flutter/material.dart';
-  import 'package:file_picker/file_picker.dart';
-  import 'package:firebase_storage/firebase_storage.dart';
-  import 'package:cloud_firestore/cloud_firestore.dart';
-  import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:file_picker/file_picker.dart';
 
-  class StudentDashboardScreen extends StatelessWidget {
-  const StudentDashboardScreen({super.key});
+class UploadAssignmentScreen extends StatefulWidget {
+  @override
+  _UploadAssignmentScreenState createState() => _UploadAssignmentScreenState();
+}
 
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Student Dashboard')),
-        body: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Due Assignments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ListTile(
-                title: Text('Assignment 1'),
-                subtitle: Text('Due: March 10, 2025'),
-                trailing: Icon(Icons.arrow_forward),
+class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
+  String? fileName;
+
+  Future<void> pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      setState(() {
+        fileName = result.files.single.name;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Upload Assignment',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.blueAccent,
+        elevation: 4,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Select Your Assignment File",
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+            SizedBox(height: 16),
+            GestureDetector(
+              onTap: pickFile,
+              child: Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade400),
+                ),
+                child: Center(
+                  child: fileName == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.upload_file,
+                                size: 50, color: Colors.blueAccent),
+                            SizedBox(height: 8),
+                            Text("Tap to upload",
+                                style: GoogleFonts.poppins(fontSize: 16)),
+                          ],
+                        )
+                      : Text(
+                          fileName!,
+                          style: GoogleFonts.poppins(
+                              fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
+                ),
               ),
-              SizedBox(height: 16),
-              Text('Submitted Assignments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ListTile(
-                title: Text('Assignment 2'),
-                subtitle: Text('Grade: A, Feedback: Good work!'),
+            ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: fileName != null ? () {} : null,
+                child: Text(
+                  "Submit",
+                  style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StudentDashboardScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Student Dashboard',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.blueAccent,
+        elevation: 4,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Due Assignments',
+                style: GoogleFonts.poppins(
+                    fontSize: 18, fontWeight: FontWeight.bold)),
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                title: Text('Assignment 1',
+                    style: GoogleFonts.poppins(fontSize: 16)),
+                subtitle: Text('Due: March 10, 2025',
+                    style: GoogleFonts.poppins(fontSize: 14)),
+                trailing:
+                    Icon(Icons.arrow_forward_ios, color: Colors.blueAccent),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text('Submitted Assignments',
+                style: GoogleFonts.poppins(
+                    fontSize: 18, fontWeight: FontWeight.bold)),
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                title: Text('Assignment 2',
+                    style: GoogleFonts.poppins(fontSize: 16)),
+                subtitle: Text('Grade: A, Feedback: Good work!',
+                    style: GoogleFonts.poppins(fontSize: 14)),
                 trailing: Icon(Icons.check_circle, color: Colors.green),
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => UploadAssignmentScreen()));
-                },
-                child: Text('Upload Assignment'),
-              )
-            ],
-          ),
-        ),
-      );
-    }
-  }
-
-  class UploadAssignmentScreen extends StatefulWidget {
-  const UploadAssignmentScreen({super.key});
-
-    @override
-    _UploadAssignmentScreenState createState() => _UploadAssignmentScreenState();
-  }
-
-  class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
-    String? fileName;
-    File? file;
-    bool isUploading = false;
-
-    Future<void> pickFile() async {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-      if (result != null) {
-        setState(() {
-          file = File(result.files.single.path!);
-          fileName = result.files.single.name;
-        });
-      }
-    }
-
-    Future<void> uploadFile() async {
-      if (file == null) return;
-      setState(() { isUploading = true; });
-
-      try {
-        String filePath = 'assignments/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-        Reference ref = FirebaseStorage.instance.ref().child(filePath);
-        UploadTask uploadTask = ref.putFile(file!);
-        TaskSnapshot snapshot = await uploadTask;
-        String downloadUrl = await snapshot.ref.getDownloadURL();
-
-        await FirebaseFirestore.instance.collection('student_assignments').add({
-          'fileName': fileName,
-          'fileUrl': downloadUrl,
-          'uploadedAt': Timestamp.now(),
-        });
-
-        setState(() { file = null; fileName = null; });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload Successful!')));
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload Failed: $e')));
-      }
-
-      setState(() { isUploading = false; });
-    }
-
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Upload Assignment')),
-        body: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              fileName != null ? Text('Selected File: $fileName', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)) : Text('No file selected', style: TextStyle(fontSize: 16)),
-              SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: pickFile,
-                icon: Icon(Icons.upload_file),
-                label: Text('Pick a PDF'),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: isUploading ? null : uploadFile,
-                icon: Icon(Icons.send),
-                label: isUploading ? CircularProgressIndicator() : Text('Submit Assignment'),
-              )
-            ],
-          ),
-        ),
-      );
-    }
-  }
-
-  class StudentFilesScreen extends StatelessWidget {
-  const StudentFilesScreen({super.key});
-
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(title: Text('Student Files')),
-        body: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('student_assignments').snapshots(),
-          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (!snapshot.hasData) {
-              return Center(child: CircularProgressIndicator());
-            }
-            var files = snapshot.data!.docs;
-            return ListView.builder(
-              itemCount: files.length,
-              itemBuilder: (context, index) {
-                var file = files[index];
-                return Card(
-                  elevation: 3,
-                  margin: EdgeInsets.symmetric(vertical: 8.0),
-                  child: ListTile(
-                    leading: Icon(Icons.picture_as_pdf, color: Colors.red),
-                    title: Text(file['fileName'], style: TextStyle(fontSize: 16)),
-                    trailing: IconButton(
-                      icon: Icon(Icons.download, color: Colors.blue),
-                      onPressed: () {}, // Implement download functionality
-                    ),
+            ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              },
-            );
-          },
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => UploadAssignmentScreen()));
+                },
+                child: Text(
+                  "Upload Assignment",
+                  style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white),
+                ),
+              ),
+            ),
+          ],
         ),
-      );
-    }
+      ),
+    );
   }
+}

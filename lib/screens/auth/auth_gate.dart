@@ -58,6 +58,6 @@ class _AuthGateState extends State<AuthGate> {
       return const LoginScreen(); // Redirect to login if not authenticated
     }
 
-    return userRole == 'teacher' ? const TeacherDashboardScreen() : const StudentDashboardScreen();
+    return userRole == 'teacher' ? const TeacherDashboardScreen() : StudentDashboardScreen();
   }
 }

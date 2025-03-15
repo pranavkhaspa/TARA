@@ -15,7 +15,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController nameController = TextEditingController();
   final AuthService authService = AuthService();
   final _formKey = GlobalKey<FormState>();
-  String _selectedRole = 'student'; // Default role
+  String _selectedRole = 'student';
 
   @override
   void dispose() {
@@ -25,7 +25,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  // Fixed _signUp method with all required parameters
   Future<void> _signUp() async {
     if (_formKey.currentState != null && _formKey.currentState!.validate()) {
       try {
@@ -33,31 +32,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
           emailController.text.trim(),
           passwordController.text.trim(),
           nameController.text.trim(),
-          _selectedRole,  // Added role parameter
-          context,        // Added context parameter
+          _selectedRole,  
+          context,        
         );
 
         if (error == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    "Registration successful! Please log in."
-                    )),
+            const SnackBar(content: Text("Registration successful! Please log in.")),
           );
 
-          // Navigate to Login Screen
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-                builder: (context) => const LoginScreen()),
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
           );
         } else {
-          // Display error message
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(error))
-              );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
         }
-
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("An error occurred: $e")),
@@ -69,71 +59,68 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // Match with LoginScreen background
       appBar: AppBar(
         title: const Text('Sign Up'),
+        backgroundColor: Colors.blueAccent, // Match LoginScreen's app bar
+        centerTitle: true,
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Full Name Field
+                // Full Name
                 TextFormField(
                   controller: nameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Full Name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.person),
                   ),
-                  validator: (value) {
-                    if(value!.isEmpty) return "Please enter your full name";
-                    return null;
-                  }
+                  validator: (value) => value!.isEmpty ? "Please enter your full name" : null,
                 ),
                 const SizedBox(height: 16),
 
-                // Email Field
+                // Email
                 TextFormField(
                   controller: emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.email),
                   ),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value!.isEmpty) return "Please enter your email";
-                    return null;
-                  }
+                  validator: (value) => value!.isEmpty ? "Please enter your email" : null,
                 ),
                 const SizedBox(height: 16),
 
-                // Password Field
+                // Password
                 TextFormField(
                   controller: passwordController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.lock),
                   ),
                   obscureText: true,
                   validator: (value) {
                     if (value!.isEmpty) return "Please enter your password";
                     if (value.length < 6) return "Password must be at least 6 characters";
                     return null;
-                  }
+                  },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Role Selection
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Role',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.badge),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.badge),
                   ),
                   value: _selectedRole,
                   items: const [
@@ -150,22 +137,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                 // Sign Up Button
                 ElevatedButton(
-                  onPressed: _signUp, // Call _signUp() method
-                  child: const Text("Sign Up", style: TextStyle(fontSize: 18)),
+                  onPressed: _signUp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text("Sign Up", style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
                 const SizedBox(height: 16),
 
                 // Already have an account? Login Button
                 TextButton(
                   onPressed: () {
-                    // Navigate to Login Screen
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute( 
-                          builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
                     );
                   },
-                  child: const Text("Already have an account? Log in here."),
+                  child: const Text("Already have an account? Log in here.", style: TextStyle(color: Colors.blueAccent)),
                 ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,7 +17,6 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
   File? file;
   bool isUploading = false;
 
-  // Function to pick a file (PDF)
   Future<void> pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -30,7 +30,6 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
     }
   }
 
-  // Function to upload the file to Firebase
   Future<void> uploadFile() async {
     if (file == null) return;
     setState(() {
@@ -45,7 +44,6 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
       TaskSnapshot snapshot = await uploadTask;
       String downloadUrl = await snapshot.ref.getDownloadURL();
 
-      // Save file metadata to Firestore
       await FirebaseFirestore.instance.collection('student_assignments').add({
         'fileName': fileName,
         'fileUrl': downloadUrl,
@@ -73,29 +71,60 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Upload Assignment')),
+      appBar: AppBar(
+        title: Text(
+          'Upload Assignment',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.blueAccent,
+      ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             fileName != null
-                ? Text('Selected File: $fileName',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))
-                : Text('No file selected', style: TextStyle(fontSize: 16)),
-            SizedBox(height: 20),
+                ? Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        'Selected File: $fileName',
+                        style: GoogleFonts.poppins(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                : Text(
+                    'No file selected',
+                    style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
+                  ),
+            const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: pickFile,
-              icon: Icon(Icons.upload_file),
-              label: Text('Pick a PDF'),
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Pick a PDF'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
+              ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: isUploading ? null : uploadFile,
-              icon: Icon(Icons.send),
-              label: isUploading
-                  ? CircularProgressIndicator()
-                  : Text('Submit Assignment'),
+              icon: isUploading
+                  ? const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : const Icon(Icons.send),
+              label: Text('Submit Assignment'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),

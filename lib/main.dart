@@ -1,10 +1,30 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:ai_teaching_assistant/screens/home_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:ai_teaching_assistant/screens/auth/auth_gate.dart';
+import 'firebase_options.dart'; // Ensure Firebase configuration is set up
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Ensure Firebase is initialized
+
+  // Initialize Firebase
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyC46wX-mshbXT08wRVrS-D2TIBotmJNnxY",
+        authDomain: "aiteachingassistant-965a8.firebaseapp.com",
+        projectId: "aiteachingassistant-965a8",
+        storageBucket: "aiteachingassistant-965a8.appspot.com",
+        messagingSenderId: "547885866567",
+        appId: "1:547885866567:web:9d49e04092a10a244d1b62",
+      ),
+    );
+  } else {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform, // For mobile platforms
+    );
+  }
+
   runApp(const MyApp());
 }
 
@@ -13,32 +33,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: Firebase.initializeApp(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const MaterialApp(
-            home: Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        } else if (snapshot.hasError) {
-          return MaterialApp(
-            home: Scaffold(
-              body: Center(child: Text('Error: ${snapshot.error}')),
-            ),
-          );
-        }
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'AI Teaching Assistant',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            useMaterial3: true,
-          ),
-          home: const HomeScreen(),
-        );
-      },
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'AI Teaching Assistant',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const AuthGate(), // Redirects based on authentication state
     );
   }
 }
