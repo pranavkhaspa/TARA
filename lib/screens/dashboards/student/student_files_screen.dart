@@ -1,134 +1,124 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
+import 'upload_assignment_screen.dart';
 
-class UploadAssignmentScreen extends StatefulWidget {
-  const UploadAssignmentScreen({super.key});
+class StudentFilesScreen extends StatelessWidget {
+  final String studentId;
 
-  @override
-  _UploadAssignmentScreenState createState() => _UploadAssignmentScreenState();
-}
-
-class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
-  String? fileName;
-  File? file;
-  bool isUploading = false;
-
-  Future<void> pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-    if (result != null) {
-      setState(() {
-        file = File(result.files.single.path!);
-        fileName = result.files.single.name;
-      });
-    }
-  }
-
-  Future<void> uploadFile() async {
-    if (file == null) return;
-    setState(() {
-      isUploading = true;
-    });
-
-    try {
-      String filePath =
-          'assignments/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-      Reference ref = FirebaseStorage.instance.ref().child(filePath);
-      UploadTask uploadTask = ref.putFile(file!);
-      TaskSnapshot snapshot = await uploadTask;
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-
-      await FirebaseFirestore.instance.collection('student_assignments').add({
-        'fileName': fileName,
-        'fileUrl': downloadUrl,
-        'uploadedAt': Timestamp.now(),
-      });
-
-      setState(() {
-        file = null;
-        fileName = null;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload Successful!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload Failed: $e')),
-      );
-    }
-
-    setState(() {
-      isUploading = false;
-    });
-  }
+  const StudentFilesScreen({Key? key, required this.studentId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Upload Assignment',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            fileName != null
-                ? Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Text(
-                        'Selected File: $fileName',
-                        style: GoogleFonts.poppins(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('assignments').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("No assignments available"));
+        }
+
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            var assignment = snapshot.data!.docs[index];
+            var assignmentData = assignment.data() as Map<String, dynamic>?;
+
+            if (assignmentData == null) return const SizedBox();
+
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('assignments')
+                  .doc(assignment.id)
+                  .collection('submissions')
+                  .doc(studentId)
+                  .get(),
+              builder: (context, submissionSnapshot) {
+                String submissionStatus = "Not Submitted";
+                String marks = "N/A";
+                String feedback = "No feedback";
+
+                if (submissionSnapshot.connectionState == ConnectionState.done &&
+                    submissionSnapshot.data != null &&
+                    submissionSnapshot.data!.exists) {
+                  var submissionData = submissionSnapshot.data!.data() as Map<String, dynamic>?;
+
+                  if (submissionData != null) {
+                    submissionStatus = "Submitted";
+                    marks = submissionData['marks']?.toString() ?? "Not Graded";
+                    feedback = submissionData['feedback'] ?? "No feedback yet";
+                  }
+                }
+
+                return Card(
+                  margin: const EdgeInsets.all(10),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Text(
+                      assignmentData['title'] ?? 'No Title',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  )
-                : Text(
-                    'No file selected',
-                    style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Due Date: ${assignmentData['date'] ?? 'N/A'}",
+                            style: GoogleFonts.poppins(fontSize: 14)),
+                        Text("Status: $submissionStatus",
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: submissionStatus == "Submitted" ? Colors.green : Colors.red,
+                            )),
+                        Text("Marks: $marks",
+                            style: GoogleFonts.poppins(fontSize: 14)),
+                        Text("Feedback: $feedback",
+                            style: GoogleFonts.poppins(fontSize: 14)),
+                      ],
+                    ),
+                    trailing: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UploadAssignmentScreen(
+                              assignmentId: assignment.id,
+                              assignmentTitle: assignmentData['title'] ?? 'No Title',
+                              createdBy: assignmentData['createdBy'] ?? 'Unknown',
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        submissionStatus == "Submitted" ? "Resubmit" : "Upload",
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: pickFile,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Pick a PDF'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: isUploading ? null : uploadFile,
-              icon: isUploading
-                  ? const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: CircularProgressIndicator(color: Colors.white),
-                    )
-                  : const Icon(Icons.send),
-              label: Text('Submit Assignment'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -46,6 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '547885866567',
     projectId: 'aiteachingassistant-965a8',
     authDomain: 'aiteachingassistant-965a8.firebaseapp.com',
+    databaseURL: 'https://aiteachingassistant-965a8-default-rtdb.firebaseio.com',
     storageBucket: 'aiteachingassistant-965a8.firebasestorage.app',
   );
 
@@ -54,6 +55,7 @@ class DefaultFirebaseOptions {
     appId: '1:547885866567:android:940688e289d8da814d1b62',
     messagingSenderId: '547885866567',
     projectId: 'aiteachingassistant-965a8',
+    databaseURL: 'https://aiteachingassistant-965a8-default-rtdb.firebaseio.com',
     storageBucket: 'aiteachingassistant-965a8.firebasestorage.app',
   );
 
@@ -62,6 +64,7 @@ class DefaultFirebaseOptions {
     appId: '1:547885866567:ios:fe1ae7701d2183e14d1b62',
     messagingSenderId: '547885866567',
     projectId: 'aiteachingassistant-965a8',
+    databaseURL: 'https://aiteachingassistant-965a8-default-rtdb.firebaseio.com',
     storageBucket: 'aiteachingassistant-965a8.firebasestorage.app',
     iosClientId: '547885866567-qhuooidippklf4vlqgop49sr0cadhcs4.apps.googleusercontent.com',
     iosBundleId: 'com.example.aiTeachingAssistant',
@@ -72,6 +75,7 @@ class DefaultFirebaseOptions {
     appId: '1:547885866567:ios:fe1ae7701d2183e14d1b62',
     messagingSenderId: '547885866567',
     projectId: 'aiteachingassistant-965a8',
+    databaseURL: 'https://aiteachingassistant-965a8-default-rtdb.firebaseio.com',
     storageBucket: 'aiteachingassistant-965a8.firebasestorage.app',
     iosClientId: '547885866567-qhuooidippklf4vlqgop49sr0cadhcs4.apps.googleusercontent.com',
     iosBundleId: 'com.example.aiTeachingAssistant',
@@ -83,6 +87,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '547885866567',
     projectId: 'aiteachingassistant-965a8',
     authDomain: 'aiteachingassistant-965a8.firebaseapp.com',
+    databaseURL: 'https://aiteachingassistant-965a8-default-rtdb.firebaseio.com',
     storageBucket: 'aiteachingassistant-965a8.firebasestorage.app',
   );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// ignore: unused_import
 import 'package:ai_teaching_assistant/screens/dashboards/student/student_dashboard_screen.dart';
 import 'package:ai_teaching_assistant/screens/dashboards/teacher/dashboard_screen.dart';
 import 'package:ai_teaching_assistant/screens/auth/auth_service.dart';
@@ -38,6 +39,6 @@ class _MainScreenState extends State<MainScreen> {
     // Removed the 'const' keyword from the below screens
     return userRole == 'teacher'
         ? TeacherDashboardScreen() // Removed 'const' here
-        : StudentDashboardScreen(); // Removed 'const' here
+        :  StudentDashboardScreen(); // Removed 'const' here
   }
 }

@@ -1,104 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:file_picker/file_picker.dart';
-
-class UploadAssignmentScreen extends StatefulWidget {
-  @override
-  _UploadAssignmentScreenState createState() => _UploadAssignmentScreenState();
-}
-
-class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
-  String? fileName;
-
-  Future<void> pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      setState(() {
-        fileName = result.files.single.name;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Upload Assignment',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Select Your Assignment File",
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 16),
-            GestureDetector(
-              onTap: pickFile,
-              child: Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade400),
-                ),
-                child: Center(
-                  child: fileName == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.upload_file,
-                                size: 50, color: Colors.blueAccent),
-                            SizedBox(height: 8),
-                            Text("Tap to upload",
-                                style: GoogleFonts.poppins(fontSize: 16)),
-                          ],
-                        )
-                      : Text(
-                          fileName!,
-                          style: GoogleFonts.poppins(
-                              fontSize: 16, fontWeight: FontWeight.w500),
-                        ),
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: fileName != null ? () {} : null,
-                child: Text(
-                  "Submit",
-                  style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+import 'upload_assignment_screen.dart';
 
 class StudentDashboardScreen extends StatelessWidget {
+  const StudentDashboardScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,73 +15,87 @@ class StudentDashboardScreen extends StatelessWidget {
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.blueAccent,
-        elevation: 4,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Due Assignments',
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                title: Text('Assignment 1',
-                    style: GoogleFonts.poppins(fontSize: 16)),
-                subtitle: Text('Due: March 10, 2025',
-                    style: GoogleFonts.poppins(fontSize: 14)),
-                trailing:
-                    Icon(Icons.arrow_forward_ios, color: Colors.blueAccent),
-              ),
-            ),
-            SizedBox(height: 16),
-            Text('Submitted Assignments',
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-            Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                title: Text('Assignment 2',
-                    style: GoogleFonts.poppins(fontSize: 16)),
-                subtitle: Text('Grade: A, Feedback: Good work!',
-                    style: GoogleFonts.poppins(fontSize: 14)),
-                trailing: Icon(Icons.check_circle, color: Colors.green),
-              ),
-            ),
-            SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 14),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('assignments').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text("No assignments available"));
+          }
+
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              var assignment = snapshot.data!.docs[index];
+              var assignmentRef = assignment.reference;
+              var assignmentData = assignment.data() as Map<String, dynamic>?;
+
+              if (assignmentData != null && !assignmentData.containsKey('grade')) {
+                assignmentRef.set({'grade': 'Not Assigned'}, SetOptions(merge: true));
+              }
+
+              return Card(
+                margin: const EdgeInsets.all(10),
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => UploadAssignmentScreen()));
-                },
-                child: Text(
-                  "Upload Assignment",
-                  style: GoogleFonts.poppins(
-                      fontSize: 16,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  title: Text(
+                    assignmentData?['title'] ?? 'No Title',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white),
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Due Date: ${assignmentData?['date'] ?? 'N/A'}",
+                          style: GoogleFonts.poppins(fontSize: 14)),
+                      Text("Marks: ${assignmentData?['marks'] ?? 'N/A'}",
+                          style: GoogleFonts.poppins(fontSize: 14)),
+                      Text("Grade: ${assignmentData?['grade'] ?? 'Not Assigned'}",
+                          style: GoogleFonts.poppins(fontSize: 14)),
+                    ],
+                  ),
+                  trailing: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UploadAssignmentScreen(
+                            assignmentId: assignment.id,
+                            assignmentTitle: assignmentData?['title'] ?? 'No Title',
+                            createdBy: assignmentData?['createdBy'] ?? 'Unknown',
+                          ),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      "Upload",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }

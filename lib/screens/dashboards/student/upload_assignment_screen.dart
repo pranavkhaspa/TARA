@@ -1,11 +1,24 @@
-import 'package:flutter/material.dart';
+import 'dart:io' show File;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class UploadAssignmentScreen extends StatefulWidget {
-  const UploadAssignmentScreen({super.key});
+  final String assignmentId;
+  final String assignmentTitle;
+  final String createdBy;
+
+  const UploadAssignmentScreen({
+    Key? key,
+    required this.assignmentId,
+    required this.assignmentTitle,
+    required this.createdBy,
+  }) : super(key: key);
 
   @override
   _UploadAssignmentScreenState createState() => _UploadAssignmentScreenState();
@@ -16,86 +29,148 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
   File? file;
   bool isUploading = false;
 
-  // Function to pick a file (PDF)
   Future<void> pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-    if (result != null) {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null && result.files.single.path != null) {
       setState(() {
-        file = File(result.files.single.path!);
         fileName = result.files.single.name;
+        file = File(result.files.single.path!);
       });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No file selected")),
+      );
     }
   }
 
-  // Function to upload the file to Firebase
   Future<void> uploadFile() async {
-    if (file == null) return;
-    setState(() {
-      isUploading = true;
-    });
+    if (file == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a file to upload")),
+      );
+      return;
+    }
+
+    setState(() => isUploading = true);
 
     try {
-      String filePath =
-          'assignments/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-      Reference ref = FirebaseStorage.instance.ref().child(filePath);
-      UploadTask uploadTask = ref.putFile(file!);
-      TaskSnapshot snapshot = await uploadTask;
-      String downloadUrl = await snapshot.ref.getDownloadURL();
+      // Create a PDF
+      final pdf = pw.Document();
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text("Assignment Submission", style: pw.TextStyle(fontSize: 24)),
+                pw.SizedBox(height: 20),
+                pw.Text("Title: ${widget.assignmentTitle}", style: pw.TextStyle(fontSize: 18)),
+                pw.Text("Created By: ${widget.createdBy}"),
+                pw.Text("Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}"),
+              ],
+            );
+          },
+        ),
+      );
 
-      // Save file metadata to Firestore
-      await FirebaseFirestore.instance.collection('student_assignments').add({
-        'fileName': fileName,
-        'fileUrl': downloadUrl,
-        'uploadedAt': Timestamp.now(),
+      // Save PDF
+      final output = await getTemporaryDirectory();
+      final pdfFile = File("${output.path}/submission.pdf");
+      await pdfFile.writeAsBytes(await pdf.save());
+
+      // Upload PDF to Firebase Storage
+      String pdfPath = 'assignments/${widget.assignmentId}/submission.pdf';
+      Reference storageRef = FirebaseStorage.instance.ref().child(pdfPath);
+      await storageRef.putFile(pdfFile);
+      String fileUrl = await storageRef.getDownloadURL();
+
+      // Save submission details in Firestore
+      await FirebaseFirestore.instance.collection('submissions').add({
+        'assignmentId': widget.assignmentId,
+        'fileName': 'submission.pdf',
+        'fileUrl': fileUrl,
+        'submittedAt': Timestamp.now(),
+        'createdBy': widget.createdBy,
+        'title': widget.assignmentTitle,
       });
 
-      setState(() {
-        file = null;
-        fileName = null;
-      });
+      sendToAI(fileUrl);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload Successful!')),
+        const SnackBar(content: Text("Assignment submitted successfully!")),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload Failed: $e')),
+        SnackBar(content: Text("Upload failed: $e")),
       );
     }
 
-    setState(() {
-      isUploading = false;
-    });
+    setState(() => isUploading = false);
+  }
+
+  void sendToAI(String fileUrl) {
+    debugPrint("Sending file to AI for grading: $fileUrl");
+    // TODO: Integrate AI grading API here
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Upload Assignment')),
+      appBar: AppBar(
+        title: Text(
+          'Upload ${widget.assignmentTitle}',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.blueAccent,
+      ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            fileName != null
-                ? Text('Selected File: $fileName',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))
-                : Text('No file selected', style: TextStyle(fontSize: 16)),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: pickFile,
-              icon: Icon(Icons.upload_file),
-              label: Text('Pick a PDF'),
+            Text("Select Your Assignment File",
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: pickFile,
+              child: Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade400),
+                ),
+                child: Center(
+                  child: fileName == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.upload_file, size: 50, color: Colors.blueAccent),
+                            const SizedBox(height: 8),
+                            Text("Tap to upload", style: GoogleFonts.poppins(fontSize: 16)),
+                          ],
+                        )
+                      : Text(fileName!,
+                          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500)),
+                ),
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: isUploading ? null : uploadFile,
-              icon: Icon(Icons.send),
-              label: isUploading
-                  ? CircularProgressIndicator()
-                  : Text('Submit Assignment'),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: (fileName != null && !isUploading) ? uploadFile : null,
+                child: isUploading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text("Submit",
+                        style: GoogleFonts.poppins(
+                            fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+              ),
             ),
           ],
         ),
