@@ -1,6 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+// ignore: unused_import
+import 'package:ai_teaching_assistant/screens/auth/login_screen.dart';
+
 import 'package:ai_teaching_assistant/screens/auth/auth_gate.dart';
 import 'firebase_options.dart'; // Ensure Firebase configuration is set up
 
@@ -39,7 +42,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const AuthGate(), // Redirects based on authentication state
+      routes: {
+        '/auth-gate': (context) => const AuthGate(), // Add a route called /auth-gate
+      },
+      initialRoute: '/auth-gate',
     );
   }
 }

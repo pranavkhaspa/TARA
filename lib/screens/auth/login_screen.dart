@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ai_teaching_assistant/screens/dashboards/student/student_dashboard_screen.dart';
-import 'package:ai_teaching_assistant/screens/dashboards/teacher/dashboard_screen.dart';
 import 'package:ai_teaching_assistant/screens/auth/auth_service.dart';
 import 'package:ai_teaching_assistant/screens/auth/signup_screen.dart'; // Import Signup Screen
 
@@ -23,34 +21,24 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     String? errorMessage = await _authService.loginUser(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-      context,
-    );
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        context,
+      );
 
     if (errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.redAccent),
       );
     } else {
-      String? userRole =
-          await _authService.getUserRole(email: _emailController.text.trim());
-      if (userRole != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => userRole == 'teacher'
-                ? const TeacherDashboardScreen()
-                : StudentDashboardScreen(),
-          ),
-        );
-      }
+      Navigator.pushReplacementNamed(
+          context, '/auth-gate');
     }
     setState(() => _isLoading = false);
   }
+
+
+
 
   @override
   Widget build(BuildContext context) {

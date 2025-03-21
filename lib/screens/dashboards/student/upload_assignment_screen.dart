@@ -1,12 +1,8 @@
-import 'dart:io' show File;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf/widgets.dart' as pw;
 
 class UploadAssignmentScreen extends StatefulWidget {
   final String assignmentId;
@@ -25,92 +21,115 @@ class UploadAssignmentScreen extends StatefulWidget {
 }
 
 class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
-  String? fileName;
-  File? file;
-  bool isUploading = false;
-
-  Future<void> pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        fileName = result.files.single.name;
-        file = File(result.files.single.path!);
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No file selected")),
-      );
-    }
+  final TextEditingController _directUrlController = TextEditingController();
+  InAppWebViewController? webViewController;
+  String fileUrl = '';
+  String _userEmail = "";
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive.readonly'
+    ],
+  );
+  @override
+  void initState() {
+    super.initState();  
   }
+  final String htmlContent = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Google Picker</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
+      <script src="https://apis.google.com/js/api.js"></script>
+      <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f4f4f4; }
+        button { 
+          background-color: #4285F4; color: white; border: none; 
+          padding: 10px 20px; font-size: 16px; cursor: pointer; 
+          border-radius: 5px; margin-top: 10px;
+        }
+        button:hover { background-color: #357ae8; }
+        input { width: 80%; padding: 8px; margin-top: 10px; }
+      </style>
+    </head>
+    <body>
+    <h2>Select File from Google Drive</h2>
+    <button onclick="signInWithGoogle()">Sign in with Google</button>
+    <p id="userEmail"></p>
+    <button onclick="openGooglePicker()">Choose File</button>
+    <input type="text" id="fileLink" placeholder="File URL" readonly/>
+    <script>
+    let accessToken = "";
+    function signInWithGoogle() {
+      google.accounts.oauth2.initTokenClient({
+          client_id: "YOUR_CLIENT_ID",
+          scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly",
+          callback: (tokenResponse) => {
+              accessToken = tokenResponse.access_token;
+              fetchUserInfo();
+          }
+      }).requestAccessToken();
+    }
+    function fetchUserInfo() {
+      fetch("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", {
+          headers: { Authorization: `Bearer \${accessToken}` }
+      })
+      .then(response => response.json())
+      .then(data => {
+          document.getElementById("userEmail").innerText = `Signed in as: \${data.email}`;
+      });  
+    }
+    function openGooglePicker() {
+        gapi.load("picker", function() {
+            let picker = new google.picker.PickerBuilder()
+                .addView(google.picker.ViewId.DOCS)
+                .setOAuthToken(accessToken)
+                .setDeveloperKey("YOUR_API_KEY")
+                .setCallback(pickerCallback)
+                .build();
+            picker.setVisible(true);
+        });
+    }
+    function pickerCallback(data) {
+      if (data.action === google.picker.Action.PICKED) {
+          let fileId = data.docs[0].id;
+          let fileUrl = `https://drive.google.com/uc?export=download&id=\${fileId}`;
+          document.getElementById("fileLink").value = fileUrl;
+          window.flutter_inappwebview.callHandler('directUrlHandler', fileUrl);
+      }
+    }    
+</script>
+</body>
+</html>
+    """;
 
-  Future<void> uploadFile() async {
-    if (file == null) {
+  Future<void> _submitLink(String fileUrl) async {
+    if (fileUrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a file to upload")),
+        const SnackBar(content: Text("Please convert a link to submit.")),
       );
       return;
     }
-
-    setState(() => isUploading = true);
-
     try {
-      // Create a PDF
-      final pdf = pw.Document();
-      pdf.addPage(
-        pw.Page(
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text("Assignment Submission", style: pw.TextStyle(fontSize: 24)),
-                pw.SizedBox(height: 20),
-                pw.Text("Title: ${widget.assignmentTitle}", style: pw.TextStyle(fontSize: 18)),
-                pw.Text("Created By: ${widget.createdBy}"),
-                pw.Text("Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}"),
-              ],
-            );
-          },
-        ),
-      );
-
-      // Save PDF
-      final output = await getTemporaryDirectory();
-      final pdfFile = File("${output.path}/submission.pdf");
-      await pdfFile.writeAsBytes(await pdf.save());
-
-      // Upload PDF to Firebase Storage
-      String pdfPath = 'assignments/${widget.assignmentId}/submission.pdf';
-      Reference storageRef = FirebaseStorage.instance.ref().child(pdfPath);
-      await storageRef.putFile(pdfFile);
-      String fileUrl = await storageRef.getDownloadURL();
-
-      // Save submission details in Firestore
+      GoogleSignInAccount? user = await _googleSignIn.signInSilently();
       await FirebaseFirestore.instance.collection('submissions').add({
         'assignmentId': widget.assignmentId,
-        'fileName': 'submission.pdf',
+        'userId': user!.id,
         'fileUrl': fileUrl,
         'submittedAt': Timestamp.now(),
         'createdBy': widget.createdBy,
-        'title': widget.assignmentTitle,
       });
-
-      sendToAI(fileUrl);
-
+    
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Assignment submitted successfully!")),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Upload failed: $e")),
+        SnackBar(content: Text("Submission failed : $e")),
       );
     }
-
-    setState(() => isUploading = false);
-  }
-
-  void sendToAI(String fileUrl) {
-    debugPrint("Sending file to AI for grading: $fileUrl");
-    // TODO: Integrate AI grading API here
   }
 
   @override
@@ -126,55 +145,56 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Select Your Assignment File",
-                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: pickFile,
-              child: Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade400),
-                ),
-                child: Center(
-                  child: fileName == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.upload_file, size: 50, color: Colors.blueAccent),
-                            const SizedBox(height: 8),
-                            Text("Tap to upload", style: GoogleFonts.poppins(fontSize: 16)),
-                          ],
-                        )
-                      : Text(fileName!,
-                          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500)),
-                ),
-              ),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                                appBar: AppBar(
+                                    title: const Text('Google Picker')),
+                                body: InAppWebView(
+                                  initialData: InAppWebViewInitialData(
+                                      data: htmlContent),
+                                  initialOptions: InAppWebViewGroupOptions(
+                                    crossPlatform: InAppWebViewOptions(
+                                      supportZoom: false,
+                                    ),
+                                  ),
+                                  onWebViewCreated:
+                                      (InAppWebViewController controller) {
+                                    webViewController = controller;
+                                    webViewController!
+                                        .addJavaScriptHandler(
+                                            handlerName: 'directUrlHandler',
+                                            callback: (args) {
+                                               setState(() {
+                                                fileUrl =
+                                                    args[0].toString();
+                                                _directUrlController.text =
+                                                    fileUrl;
+                                              });
+                                            });
+                                  },
+                                ),
+                              )));
+                },
+                child: const Text("Open Google Picker")),
+            TextField(
+              controller: _directUrlController,
+              decoration: const InputDecoration(
+                  labelText: "Direct Url will be here"),
+              enabled: false,
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: (fileName != null && !isUploading) ? uploadFile : null,
-                child: isUploading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text("Submit",
-                        style: GoogleFonts.poppins(
-                            fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-              ),
-            ),
+            ElevatedButton(onPressed: () {
+                   _submitLink(fileUrl);
+                 }, child: const Text("Submit")),
           ],
-        ),
-      ),
+        )
+    )
     );
   }
 }

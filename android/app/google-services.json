@@ -17,6 +17,21 @@
         {
           "client_id": "547885866567-uaeh69eqavv0btt6a7v6iraugj1fi8v7.apps.googleusercontent.com",
           "client_type": 3
+        },
+        {
+          "client_id": "611325698161-8alpgbbku81ln2e3p43r6vfk6dlllkb7.apps.googleusercontent.com",
+          "client_type": 3,
+          "web": {
+            "client_id": "611325698161-8alpgbbku81ln2e3p43r6vfk6dlllkb7.apps.googleusercontent.com",
+            "project_id": "adi4755t",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_secret": "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",
+            "javascript_origins": [
+              "https://localhost:8080"
+            ]
+          }
         }
       ],
       "api_key": [

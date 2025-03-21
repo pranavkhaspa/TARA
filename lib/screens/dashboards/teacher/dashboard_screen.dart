@@ -79,6 +79,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ElevatedButton(
               onPressed: () async {
                 User? user = _auth.currentUser;
+                print("User Authentication Status: ${user != null ? 'Authenticated' : 'Not Authenticated'}");
                 if (user == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -86,6 +87,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   );
                   return;
                 }
+                print("User ID: ${user.uid}");
 
                 String userId = user.uid;
 
