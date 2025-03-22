@@ -33,6 +33,7 @@ class StudentDashboardScreen extends StatelessWidget {
               var assignmentRef = assignment.reference;
               var assignmentData = assignment.data() as Map<String, dynamic>?;
 
+              // Ensure 'grade' field exists in Firestore document
               if (assignmentData != null && !assignmentData.containsKey('grade')) {
                 assignmentRef.set({'grade': 'Not Assigned'}, SetOptions(merge: true));
               }
@@ -55,12 +56,18 @@ class StudentDashboardScreen extends StatelessWidget {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Due Date: ${assignmentData?['date'] ?? 'N/A'}",
-                          style: GoogleFonts.poppins(fontSize: 14)),
-                      Text("Marks: ${assignmentData?['marks'] ?? 'N/A'}",
-                          style: GoogleFonts.poppins(fontSize: 14)),
-                      Text("Grade: ${assignmentData?['grade'] ?? 'Not Assigned'}",
-                          style: GoogleFonts.poppins(fontSize: 14)),
+                      Text(
+                        "Due Date: ${assignmentData?['date'] ?? 'N/A'}",
+                        style: GoogleFonts.poppins(fontSize: 14),
+                      ),
+                      Text(
+                        "Marks: ${assignmentData?['marks']?.toString() ?? 'N/A'}",
+                        style: GoogleFonts.poppins(fontSize: 14),
+                      ),
+                      Text(
+                        "Grade: ${assignmentData?['grade'] ?? 'Not Assigned'}",
+                        style: GoogleFonts.poppins(fontSize: 14),
+                      ),
                     ],
                   ),
                   trailing: ElevatedButton(
@@ -75,9 +82,13 @@ class StudentDashboardScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => UploadAssignmentScreen(
-                            assignmentId: assignment.id,
                             assignmentTitle: assignmentData?['title'] ?? 'No Title',
-                            createdBy: assignmentData?['createdBy'] ?? 'Unknown',
+                            createdBy: assignmentData?.containsKey('createdBy') == true
+                                ? assignmentData!['createdBy'].toString()
+                                : 'Unknown',
+                            topics: assignmentData?['topics'] ?? 'Default topics',
+                            points: (assignmentData?['points'] as String?) ?? 'Default points',
+                            marks: (assignmentData?['marks']?.toString() ?? '0'),
                           ),
                         ),
                       );

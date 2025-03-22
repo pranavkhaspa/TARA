@@ -3,7 +3,7 @@
 ## Project Overview
 
 This project aims to create an AI Teaching Assistant designed to significantly reduce the burden on teachers by automating the assignment evaluation process. The system enables teachers to effortlessly create assignments, while students can submit their handwritten assignments in the form of images. Utilizing the power of Google Cloud Vision API, the project employs Optical Character Recognition (OCR) for evaluating these assignments, providing an efficient auto-grading system. To ensure academic integrity, the project also includes duplicate detection capabilities. Furthermore, the system automatically generates Google Sheets reports, streamlining the administrative tasks for teachers.
-
+The system also includes a feature for directly uploading documents to Gemini 1.5 Pro for document analysis and grading.
 ---
 
 
@@ -21,6 +21,7 @@ The AI Teaching Assistant is designed to **reduce the burden on teachers** by au
 - **Students** → Submit handwritten assignments, view marks & feedback.
 - **Educational Institutions** → Reduce grading workload, improve efficiency.
 
+
 ---
 
 ## 3️⃣ Core Features & Functionality
@@ -33,6 +34,15 @@ The AI Teaching Assistant is designed to **reduce the burden on teachers** by au
 ✅ **View All Submissions** → Detect duplicate submissions.
 ✅ **Review & Override AI Grades** → Adjust marks before finalizing.
 ✅ **Download Google Sheets Report** → Contains marks & submission details.
+✅ **Upload documents directly to Gemini 1.5 Pro** → Teachers can directly upload documents to Gemini 1.5 pro, they have the option to assign the following
+    1. **Assignment Evaluation** : Allows teachers to evaluate the assignment using Gemini 1.5 Pro.
+    2. **Points to be Included** : Teachers can define specific points or criteria that they want Gemini to consider during the evaluation.
+    3. **Topics to be Covered** : Teachers can specify the topics that should be covered in the assignment.
+    4. **Total Points** : Teachers can set the total points for the assignment.
+    5. **Instructions:** Provides specific instructions to Gemini on how the evaluation should be conducted.
+    6. **Response:** The system provides a detailed response from Gemini, offering insights into the document analysis and grading.
+
+
 ✅ **Receive Notifications** → When all students submit or after the deadline.
 
 ### 👨‍🎓 Student Features:
@@ -77,6 +87,7 @@ The AI Teaching Assistant is designed to **reduce the burden on teachers** by au
 - AI Extracted Text
 - AI Score & Feedback
 - Late Submission Status
+- Gemini 1.5 Pro response
 - Teacher Adjusted Marks (if overridden)
 
 ### 🔹 **Users Collection**
