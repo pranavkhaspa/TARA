@@ -75,9 +75,11 @@ class StudentDashboardScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => UploadAssignmentScreen(
-                            assignmentId: assignment.id,
                             assignmentTitle: assignmentData?['title'] ?? 'No Title',
-                            createdBy: assignmentData?['createdBy'] ?? 'Unknown',
+                             createdBy: assignmentData?.containsKey('createdBy') == true ? assignmentData!['createdBy'].toString() : 'Unknown',
+                             topics: assignmentData?['topics'] ?? 'No Topics',
+                             points: assignmentData?['points'] ?? 'No Points',
+                             marks: assignmentData?['marks']?.toString() ?? 'No Marks',
                           ),
                         ),
                       );
