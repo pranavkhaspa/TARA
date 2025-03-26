@@ -2,10 +2,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 // ignore: unused_import
-import 'package:ai_teaching_assistant/screens/auth/login_screen.dart';
 
-import 'package:ai_teaching_assistant/screens/auth/auth_gate.dart';
-import 'firebase_options.dart'; // Ensure Firebase configuration is set up
+import 'firebase_options.dart';
+import 'screens/auth/auth_gate.dart'; // Ensure Firebase configuration is set up
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

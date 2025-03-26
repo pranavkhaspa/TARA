@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:ai_teaching_assistant/screens/dashboards/student/student_dashboard_screen.dart';
-import 'package:ai_teaching_assistant/screens/dashboards/teacher/dashboard_screen.dart';
-import 'package:ai_teaching_assistant/screens/auth/auth_service.dart';
-import 'package:ai_teaching_assistant/screens/auth/login_screen.dart';
+
+import '../dashboards/student/student_dashboard_screen.dart';
+import '../dashboards/teacher/dashboard_screen.dart';
+import 'auth_service.dart';
+import 'login_screen.dart';
+
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});

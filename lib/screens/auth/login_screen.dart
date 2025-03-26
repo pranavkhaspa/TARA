@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ai_teaching_assistant/screens/auth/auth_service.dart';
-import 'package:ai_teaching_assistant/screens/auth/signup_screen.dart'; // Import Signup Screen
+
+import 'auth_service.dart';
+import 'signup_screen.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
