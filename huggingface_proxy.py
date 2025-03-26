@@ -1,5 +1,4 @@
 import os
-import random
 import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -10,28 +9,21 @@ load_dotenv()
 
 app = FastAPI()
 
-# Retrieve API keys and split them into a list
-HF_API_KEYS = os.getenv("HF_API_KEYS", "").split(",")
-MODEL_ID = "google/gemma-3-27b-it"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
+# Retrieve environment variables
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_MODEL = "gemini-1.5-pro-latest"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1/models/{GEMINI_MODEL}:generateContent?key={GOOGLE_API_KEY}"
 
 class InputData(BaseModel):
-    inputs: str
-    parameters: dict = None
+    contents: list
 
 @app.post("/evaluate")
 async def evaluate(data: InputData):
     try:
-        payload = data.model_dump()
+        payload = {"contents": data.contents}
+        headers = {"Content-Type": "application/json"}
         
-        # Randomly select an API key
-        api_key = random.choice(HF_API_KEYS).strip()
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-
-        response = requests.post(HF_API_URL, headers=headers, json=payload)
+        response = requests.post(GEMINI_API_URL, headers=headers, json=payload)
         response.raise_for_status()
         return response.json()
     

@@ -2,18 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'dart:convert';
 import 'dart:typed_data';
 
-// API key rotation setup
-const List<String> huggingFaceApiKeys = [
-  "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",
-  "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",
-  "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"
-];
-const String modelId = "google/gemma-3-27b-it";
-int currentKeyIndex = 0;
+const String geminiApiUrl =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+const String geminiApiKey = "AIzaSyAYyoaZYEISOzz-5aJaXym2xVFZ7q9Ie4Q";
 
 class UploadAssignmentScreen extends StatefulWidget {
   final String assignmentTitle;
@@ -23,13 +18,13 @@ class UploadAssignmentScreen extends StatefulWidget {
   final String createdBy;
 
   const UploadAssignmentScreen({
-    Key? key,
+    super.key,
     required this.assignmentTitle,
     required this.topics,
     required this.points,
     required this.marks,
     required this.createdBy,
-  }) : super(key: key);
+  });
 
   @override
   _UploadAssignmentScreenState createState() => _UploadAssignmentScreenState();
@@ -38,18 +33,11 @@ class UploadAssignmentScreen extends StatefulWidget {
 class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
   PlatformFile? selectedFile;
   bool isUploading = false;
+  bool isSubmissionLocked = false;
   String feedback = "";
-  String errorDetails = "";
-  int retryCount = 0;
-  final int maxRetries = 3;
-
-  String getNextApiKey() {
-    final key = huggingFaceApiKeys[currentKeyIndex];
-    currentKeyIndex = (currentKeyIndex + 1) % huggingFaceApiKeys.length;
-    return key;
-  }
 
   Future<void> pickFile() async {
+    if (isSubmissionLocked) return;
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
@@ -83,8 +71,6 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
 
     setState(() {
       isUploading = true;
-      errorDetails = "";
-      retryCount = 0;
     });
 
     try {
@@ -97,74 +83,55 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
     } catch (e) {
       setState(() {
         feedback = "Error occurred during evaluation";
-        errorDetails = e.toString();
       });
     } finally {
-      setState(() => isUploading = false);
+      setState(() {
+        isUploading = false;
+        isSubmissionLocked = true;
+      });
     }
   }
 
   Future<void> _makeApiRequest(String documentText) async {
-    final apiKey = getNextApiKey();
-    final prompt = """
-    <system>
-    You are an expert teacher evaluating student assignments. You provide clear, constructive feedback and fair scoring.
-    </system>
-    
-    <user>
-    Please evaluate this assignment submission:
-    
-    Assignment title: ${widget.assignmentTitle}
-    Key topics: ${widget.topics}
-    Maximum marks: ${widget.marks}
-    
-    Student submission:
-    $documentText
-    
-    Provide:
-    1. A score out of ${widget.marks}
-    2. Detailed feedback on strengths
-    3. Areas for improvement
-    4. How well the assignment covers the required topics
-    </user>
-    """;
+    final prompt = {
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text":
+                  "You are an expert teacher evaluating student assignments. Provide a score out of ${widget.marks}, detailed feedback, strengths, areas for improvement, and how well the assignment covers the required topics.\n\nAssignment title: ${widget.assignmentTitle}\nKey topics: ${widget.topics}\nMaximum marks: ${widget.marks}\n\nStudent submission:\n$documentText"
+            }
+          ]
+        }
+      ]
+    };
 
     try {
       final response = await http.post(
-        Uri.parse('https://api-inference.huggingface.co/models/$modelId'),
+        Uri.parse('$geminiApiUrl?key=$geminiApiKey'),
         headers: {
-          'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'inputs': prompt,
-          'parameters': {
-            'max_new_tokens': 1024,
-            'temperature': 0.2,
-            'top_p': 0.9,
-            'return_full_text': false
-          }
-        }),
+        body: jsonEncode(prompt),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        String generatedText = data is List && data.isNotEmpty && data[0] is Map
-            ? data[0]['generated_text'] ?? data.toString()
-            : data.toString();
+        String generatedText = data["candidates"][0]["content"]["parts"][0]
+                ["text"] ??
+            "Evaluation failed";
         setState(() {
           feedback = generatedText;
         });
       } else {
         setState(() {
           feedback = "Evaluation failed";
-          errorDetails = "Status: ${response.statusCode}\nBody: ${response.body}";
         });
       }
     } catch (e) {
       setState(() {
         feedback = "Error making API request";
-        errorDetails = e.toString();
       });
     }
   }
@@ -174,7 +141,8 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Upload Assignment',
-            style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
+            style:
+                GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.deepPurple,
       ),
       body: Padding(
@@ -192,13 +160,16 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: pickFile,
+                onPressed: isSubmissionLocked ? null : pickFile,
                 icon: Icon(Icons.attach_file),
                 label: Text('Choose File'),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: selectedFile != null && !isUploading ? evaluateFile : null,
+                onPressed:
+                    selectedFile != null && !isUploading && !isSubmissionLocked
+                        ? evaluateFile
+                        : null,
                 icon: isUploading
                     ? SizedBox(
                         width: 20,
@@ -209,7 +180,9 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
                 label: Text('Evaluate'),
               ),
               const SizedBox(height: 20),
-              feedback.isNotEmpty ? Text(feedback, style: GoogleFonts.poppins(fontSize: 16)) : Container(),
+              feedback.isNotEmpty
+                  ? Text(feedback, style: GoogleFonts.poppins(fontSize: 16))
+                  : Container(),
             ],
           ),
         ),

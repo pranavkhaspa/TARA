@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-// ignore: unused_import
-import 'package:ai_teaching_assistant/screens/dashboards/student/student_dashboard_screen.dart';
-import 'package:ai_teaching_assistant/screens/dashboards/teacher/dashboard_screen.dart';
-import 'package:ai_teaching_assistant/screens/auth/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'auth/auth_gate.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -12,33 +10,22 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  String? userRole;
-  final AuthService _authService = AuthService();
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserRole();
-  }
-
-  Future<void> _fetchUserRole() async {
-    String? role = await _authService.getUserRole();
-    setState(() {
-      userRole = role;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (userRole == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    // Removed the 'const' keyword from the below screens
-    return userRole == 'teacher'
-        ? TeacherDashboardScreen() // Removed 'const' here
-        :  StudentDashboardScreen(); // Removed 'const' here
+    return Scaffold(
+      body: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasData) {
+            return const AuthGate();
+          } else {
+            return const AuthGate();
+          }
+        },
+      ),
+    );
   }
 }
+

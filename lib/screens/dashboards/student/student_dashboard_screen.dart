@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'upload_assignment_screen.dart';
 
 class StudentDashboardScreen extends StatelessWidget {
-  const StudentDashboardScreen({Key? key}) : super(key: key);
+  const StudentDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
