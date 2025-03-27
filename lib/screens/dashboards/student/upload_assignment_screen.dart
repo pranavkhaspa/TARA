@@ -7,8 +7,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 const String geminiApiUrl =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
-const String geminiApiKey = "AIzaSyAYyoaZYEISOzz-5aJaXym2xVFZ7q9Ie4Q";
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const String geminiApiKey =
+    "AIzaSyAlQSNUW3oqs-kbguuNThZSfLcvTBZDroM"; // Replace with your actual API key
 
 class UploadAssignmentScreen extends StatefulWidget {
   final String assignmentTitle;
@@ -51,20 +52,24 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
   }
 
   Future<String> extractTextFromPdf(Uint8List bytes) async {
-    PdfDocument document = PdfDocument(inputBytes: bytes);
-    String text = '';
-    for (int i = 0; i < document.pages.count; i++) {
-      text += PdfTextExtractor(document)
-          .extractText(startPageIndex: i, endPageIndex: i);
+    try {
+      PdfDocument document = PdfDocument(inputBytes: bytes);
+      String text = '';
+      for (int i = 0; i < document.pages.count; i++) {
+        text += PdfTextExtractor(document)
+            .extractText(startPageIndex: i, endPageIndex: i);
+      }
+      document.dispose();
+      return text;
+    } catch (e) {
+      return "Error extracting text from PDF: $e";
     }
-    document.dispose();
-    return text;
   }
 
   Future<void> evaluateFile() async {
     if (selectedFile == null || selectedFile!.bytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No valid file selected!')),
+        const SnackBar(content: Text('No valid file selected!')),
       );
       return;
     }
@@ -76,13 +81,13 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
     try {
       final extractedText = await extractTextFromPdf(selectedFile!.bytes!);
       final trimmedText = extractedText.length > 7000
-          ? "${extractedText.substring(0, 7000)}... (text trimmed due to length)"
+          ? "${extractedText.substring(0, 7000)}... (text trimmed)"
           : extractedText;
 
       await _makeApiRequest(trimmedText);
     } catch (e) {
       setState(() {
-        feedback = "Error occurred during evaluation";
+        feedback = "Error during evaluation: $e";
       });
     } finally {
       setState(() {
@@ -100,7 +105,7 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
           "parts": [
             {
               "text":
-                  "You are an expert teacher evaluating student assignments. Provide a score out of ${widget.marks}, detailed feedback, strengths, areas for improvement, and how well the assignment covers the required topics.\n\nAssignment title: ${widget.assignmentTitle}\nKey topics: ${widget.topics}\nMaximum marks: ${widget.marks}\n\nStudent submission:\n$documentText"
+                  "Evaluate the student's assignment based on the given topics. Provide a score out of ${widget.marks}, strengths, areas for improvement, and feedback.\n\nAssignment title: ${widget.assignmentTitle}\nKey topics: ${widget.topics}\nMaximum marks: ${widget.marks}\n\nStudent submission:\n$documentText"
             }
           ]
         }
@@ -108,13 +113,16 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
     };
 
     try {
-      final response = await http.post(
-        Uri.parse('$geminiApiUrl?key=$geminiApiKey'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(prompt),
-      );
+      print(jsonEncode(prompt)); // Print the request
+
+      final response = await http
+          .post(Uri.parse('$geminiApiUrl?key=$geminiApiKey'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(prompt))
+          .timeout(const Duration(seconds: 60)); // Add a timeout
+
+      print(response.statusCode); // Print the status code
+      print(response.body); // Print the response body
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -126,12 +134,13 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
         });
       } else {
         setState(() {
-          feedback = "Evaluation failed";
+          feedback =
+              "Evaluation failed: Server error ${response.statusCode}, ${response.body}"; // Include response body
         });
       }
     } catch (e) {
       setState(() {
-        feedback = "Error making API request";
+        feedback = "Error making API request: $e";
       });
     }
   }
@@ -161,8 +170,8 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: isSubmissionLocked ? null : pickFile,
-                icon: Icon(Icons.attach_file),
-                label: Text('Choose File'),
+                icon: const Icon(Icons.attach_file),
+                label: const Text('Choose File'),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -171,13 +180,13 @@ class _UploadAssignmentScreenState extends State<UploadAssignmentScreen> {
                         ? evaluateFile
                         : null,
                 icon: isUploading
-                    ? SizedBox(
+                    ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(color: Colors.white),
                       )
-                    : Icon(Icons.upload),
-                label: Text('Evaluate'),
+                    : const Icon(Icons.upload),
+                label: const Text('Evaluate'),
               ),
               const SizedBox(height: 20),
               feedback.isNotEmpty

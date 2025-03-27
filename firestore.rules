@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Assignments Collection: Allow all users full access for MVP
+    match /assignments/{assignmentId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Submissions Collection
+    match /submissions/{submissionId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Grades Collection
+    match /grades/{gradeId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Allow full access to everything for MVP
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
